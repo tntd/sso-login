@@ -94,9 +94,8 @@ module.exports = (options = {}) => {
 				...userOne.dataValues,
 				password: undefined
 			};
-		} else {
-			await next();
 		}
+		await next();
 	};
 };
 ```
@@ -107,5 +106,40 @@ const ssoLogin = require('@tntd/sso-login ');
 const app = new Koa();
 
 app.use(ssoLogin(options)); // options 为 JSON object
-app.use(formatSession());// 上面的中间件
+app.use(formatSession());// 上面的中间件 format-session.js
+```
+
+## 前端 
+
+### 401 跳转登录
+```
+const goToLogin = (url, params = {}) => {
+    params.callbackUrl = params.callbackUrl || location.href;
+    window.location.href = `${url || config.ssoLoginUrl}?tokenEncoding=true&callbackUrl=${params.callbackUrl}`;
+};
+```
+
+### 退出登录
+
+```
+import { stringify } from 'query-string';
+
+const logout = (params = {}) => {
+	params.backUrl = params.backUrl || location.href;
+	window.location.href = `/api/logout?${stringify(params)}`;
+};
+```
+
+### 前后端工程分开项目
+
+```
+import { searchToObject } from '@/utils'; // URL format对象
+import { stringify } from 'query-string';
+
+// 统一登录 token 判断 本地开发使用，线上不会进 if
+const { token, ...rest } = searchToObject(location.search);
+const backUrl = `${location.protocol}//${location.host}${location.pathname}?${stringify(rest)}`;
+if (token) {
+    location.href = `/api/login?token=${encodeURIComponent(token)}&backUrl=${encodeURIComponent(backUrl)}`;
+}
 ```
